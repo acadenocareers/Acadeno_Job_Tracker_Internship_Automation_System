@@ -12,7 +12,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 import os
 
-
+# ---- CHROME CONFIG ----
 chrome_options = Options()
 chrome_options.add_argument("headless")
 chrome_options.add_argument("disable-gpu")
@@ -21,9 +21,11 @@ chrome_options.add_argument("disable-dev-shm-usage")
 chrome_options.add_argument(
     "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 )
+
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+time.sleep(1)
 
-
+# ---- JOB FILTERS ----
 TECHNICAL_ROLES = [
     "data scientist", "data science", "data analyst", "machine learning", "ml", "ai",
     "python", "django", "flask", "full stack", "react", "angular", "vue", "javascript",
@@ -31,7 +33,7 @@ TECHNICAL_ROLES = [
 ]
 EXCLUDE_ROLES = ["php", "laravel", "wordpress", "drupal", ".net", "c#", "java", "spring", "hibernate"]
 
-
+# ---- SCRAPE FROM INFOPARK ----
 def fetch_infopark_jobs():
     print("Fetching jobs from Infopark...")
     jobs = []
@@ -39,8 +41,14 @@ def fetch_infopark_jobs():
 
     while page <= 5:
         url = f"https://infopark.in/companies/job-search?page={page}"
-        driver.get(url)
-        time.sleep(2)
+        try:
+            driver.get(url)
+            time.sleep(2)
+        except Exception as e:
+            print(f"⚠️ Failed to load {url}: {e}")
+            page += 1
+            continue
+
         soup = BeautifulSoup(driver.page_source, "html.parser")
         table = soup.find("table")
         if not table:
@@ -80,16 +88,16 @@ def fetch_infopark_jobs():
 
         page += 1
 
-    print(f" Found {len(jobs)} filtered technical jobs from Infopark.")
+    print(f"✅ Found {len(jobs)} filtered technical jobs from Infopark.")
     return jobs
 
-
+# ---- GENERATE PDF BROCHURE ----
 def generate_maitexa_brochure(jobs):
     if not jobs:
         print("No jobs to add to brochure.")
         return
 
-    OUTPUT_FILE = "Maitexa_Green_Adjusted_Brochure.pdf"
+    OUTPUT_FILE = os.path.join(os.getcwd(), "Maitexa_Green_Adjusted_Brochure.pdf")
     LOGO_PATH = "maitexa_logo.png"
 
     COMPANY_NAME = "MAITEXA TECHNOLOGIES PVT LTD"
@@ -106,12 +114,12 @@ def generate_maitexa_brochure(jobs):
     pdf = canvas.Canvas(OUTPUT_FILE, pagesize=A4)
     width, height = A4
 
-  
+    # ---- HEADER DESIGN ----
     def draw_header(pdf):
         pdf.setFillColor(LIGHT_GREEN)
         pdf.circle(-120, height + 50, 300, stroke=0, fill=1)
         pdf.setFillColor(DARK_GREEN)
-        pdf.circle(width / 2, height + 100, 350, stroke=0, fill=1) 
+        pdf.circle(width / 2, height + 100, 350, stroke=0, fill=1)
 
         def draw_text_with_shadow(text, font, size, x, y):
             pdf.setFont(font, size)
@@ -120,16 +128,15 @@ def generate_maitexa_brochure(jobs):
             pdf.setFillColor(WHITE)
             pdf.drawCentredString(x, y, text)
 
-      
-        draw_text_with_shadow(COMPANY_NAME, "Helvetica-Bold", 20, width / 2, height - 70)
-        draw_text_with_shadow(SLOGAN, "Helvetica-Oblique", 12, width / 2, height - 88)
+        draw_text_with_shadow(COMPANY_NAME, "Helvetica-Bold", 20, width / 2, height - 65)
+        draw_text_with_shadow(SLOGAN, "Helvetica-Oblique", 12, width / 2, height - 82)
 
         pdf.setFont("Helvetica", 9)
         pdf.setFillColor(WHITE)
-        pdf.drawCentredString(width / 2, height - 102, ADDRESS)
-        pdf.drawCentredString(width / 2, height - 114, f"{EMAIL} | {WEBSITE}")
+        pdf.drawCentredString(width / 2, height - 98, ADDRESS)
+        pdf.drawCentredString(width / 2, height - 110, f"{EMAIL} | {WEBSITE}")
 
-   
+    # ---- WATERMARK ----
     def draw_watermark(pdf):
         if os.path.exists(LOGO_PATH):
             pdf.saveState()
@@ -138,15 +145,16 @@ def generate_maitexa_brochure(jobs):
             pdf.drawImage(LOGO_PATH, 0, 0, width=300, height=300, mask='auto')
             pdf.restoreState()
 
+    # ---- FOOTER CURVES ----
     def draw_footer(pdf):
         pdf.setFillColor(LIGHT_GREEN)
         pdf.circle(width - 200, -60, 300, stroke=0, fill=1)
         pdf.setFillColor(DARK_GREEN)
         pdf.circle(width + 100, -100, 300, stroke=0, fill=1)
 
-    
+    # ---- JOB BOXES ----
     def draw_jobs(pdf, jobs):
-        y = height - 180  
+        y = height - 170
         job_box_height = 90
         for idx, job in enumerate(jobs, 1):
             if y < 130:
@@ -191,18 +199,19 @@ def generate_maitexa_brochure(jobs):
     draw_footer_text(pdf)
     pdf.save()
 
-    print(f" Maitexa Brochure (green text fully inside) saved as: {OUTPUT_FILE}")
+    print(f"✅ Maitexa Brochure saved as: {OUTPUT_FILE}")
 
-
+# ---- MAIN EXECUTION ----
 def main():
-    print("\n Scanning Kerala IT Parks for Technical Jobs (Excluding Java)...")
+    print("\n🚀 Scanning Kerala IT Parks for Technical Jobs (Excluding Java)...")
     infopark_jobs = fetch_infopark_jobs()
     driver.quit()
 
     if infopark_jobs:
         generate_maitexa_brochure(infopark_jobs)
+        print("✅ PDF successfully created.")
     else:
-        print("No matching jobs found.")
+        print("⚠️ No matching jobs found.")
 
 if __name__ == "__main__":
     main()
