@@ -9,6 +9,8 @@ on:
 jobs:
   run-script:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # allows uploading PDF back to repo
 
     steps:
       - name: Checkout repository
@@ -27,67 +29,67 @@ jobs:
       - name: Run Maitexa job scraper
         run: python app.py
 
-      - name: Upload PDF Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: Maitexa_Job_Brochure
-          path: Maitexa_Green_Adjusted_Brochure.pdf
+      # 🟢 Upload PDF to repository (so it has a public link)
+      - name: Commit and push PDF to repo
+        run: |
+          mkdir -p pdf_reports
+          mv Maitexa_Green_Adjusted_Brochure.pdf pdf_reports/
+          git config --global user.name "Maitexa Auto Bot"
+          git config --global user.email "noreply@maitexa.com"
+          git add pdf_reports/Maitexa_Green_Adjusted_Brochure.pdf
+          git commit -m "Auto update Maitexa job brochure PDF"
+          git push
 
-      - name: Send professional email with brochure
+      - name: Send professional email with PDF link
         env:
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           python - <<'EOF'
           import os, time, smtplib
           from email.mime.text import MIMEText
           from email.mime.multipart import MIMEMultipart
-          from email.mime.base import MIMEBase
-          from email import encoders
           from datetime import datetime
 
           sender = os.getenv("EMAIL_USER")
           password = os.getenv("EMAIL_PASS")
           recipients = [x.strip() for x in os.getenv("EMAIL_TO", "").split(",") if x.strip()]
+          repo = os.getenv("GITHUB_REPOSITORY")
 
-          pdf_file = "Maitexa_Green_Adjusted_Brochure.pdf"
-          for _ in range(10):
-              if os.path.exists(pdf_file):
-                  break
-              time.sleep(2)
+          # Generate public GitHub URL to open PDF
+          pdf_url = f"https://github.com/{repo}/raw/main/pdf_reports/Maitexa_Green_Adjusted_Brochure.pdf"
 
           msg = MIMEMultipart("alternative")
           msg["From"] = f"Maitexa Technologies <{sender}>"
           msg["To"] = ", ".join(recipients)
           msg["Subject"] = f"🌟 Exciting Career Opportunities Await You – {datetime.now().strftime('%d %b %Y')}"
 
-          # ✉️ Updated HTML Email Body (Professional & Motivational)
-          html_content = """
+          # Updated HTML email (opens PDF directly)
+          html_content = f"""
           <html>
           <body style="font-family: Arial, sans-serif; font-size:15px; color:#222; line-height:1.6;">
               <p>Dear Team,</p>
 
-              <p>We are thrilled to inform you that <strong>new and exciting career opportunities</strong> are now open for talented individuals like you.</p>
+              <p>We are thrilled to inform you that <strong>new and exciting career opportunities</strong> 
+              are now open for talented individuals like you.</p>
 
               <p>At <strong>Maitexa Technologies</strong>, we believe that dreams are the starting point of every great success story. 
               This is your chance to chase your dreams and build a rewarding career with us.</p>
 
-              <p>
-              <strong>✨ Explore the latest openings</strong> and find the role that best fits your passion and skills.
-              </p>
+              <p>✨ <strong>Explore the latest openings</strong> and find the role that best fits your passion and skills.</p>
 
               <p style="margin-top: 10px; text-align: center;">
-                  <a href="https://infopark.in/companies/job-search" 
-                     style="background-color:#007A33; color:#fff; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold;">
-                     Click here to view current openings
+                  <a href="{pdf_url}" target="_blank"
+                     style="background-color:#007A33; color:#fff; padding:10px 20px; text-decoration:none; 
+                     border-radius:5px; font-weight:bold;">
+                     👉 Click here to view current openings
                   </a>
               </p>
 
-              <p style="margin-top: 15px;">
-              Take a moment to look through the opportunities and apply for the position that aligns with your goals. 
-              <br>Your next big move could start today!
-              </p>
+              <p>Take a moment to look through the opportunities and apply for the position that aligns with your goals.<br>
+              Your next big move could start today!</p>
 
               <p>We wish you all the best in your career journey. Let’s build a brighter future together!</p>
 
@@ -95,8 +97,7 @@ jobs:
               <strong style="color:#007A33;">Maitexa Technologies Pvt Ltd</strong><br>
               Kadannamanna, Malappuram, Kerala – 679324<br>
               <a href='mailto:contact@maitexa.com'>contact@maitexa.com</a> |
-              <a href='https://www.maitexa.com'>www.maitexa.com</a>
-              </p>
+              <a href='https://www.maitexa.com'>www.maitexa.com</a></p>
 
               <p style="font-size:12px; color:#666;">— Generated automatically by Maitexa Job Tracker © 2025</p>
           </body>
@@ -105,22 +106,10 @@ jobs:
 
           msg.attach(MIMEText(html_content, "html"))
 
-          # Attach PDF if available
-          if os.path.exists(pdf_file):
-              with open(pdf_file, "rb") as f:
-                  part = MIMEBase("application", "pdf")
-                  part.set_payload(f.read())
-              encoders.encode_base64(part)
-              part.add_header("Content-Disposition", f"attachment; filename={pdf_file}")
-              msg.attach(part)
-          else:
-              msg.attach(MIMEText("⚠️ PDF not found – the scraper may have failed.", "plain"))
-
-          # Send Email
           with smtplib.SMTP("smtp.gmail.com", 587) as server:
               server.starttls()
               server.login(sender, password)
               server.send_message(msg)
 
-          print("✅ Professional motivational email sent successfully with attachment!")
+          print(f"✅ Email sent successfully with live PDF link: {pdf_url}")
           EOF
