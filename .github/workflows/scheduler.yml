@@ -29,11 +29,9 @@ jobs:
       - name: Run Maitexa job scraper
         run: |
           echo "🚀 Running Maitexa scraper..."
-          python app.py || echo "⚠️ Scraper ran with warnings."
-
-          echo "📁 Checking for generated PDF..."
+          python app.py || echo "⚠️ Scraper finished with warnings."
           if [ ! -f "Maitexa_Green_Adjusted_Brochure.pdf" ]; then
-            echo "❌ PDF not found. Creating a fallback PDF..."
+            echo "❌ PDF not found. Creating fallback..."
             python - <<'EOF'
             from reportlab.pdfgen import canvas
             from reportlab.lib.pagesizes import A4
@@ -41,108 +39,85 @@ jobs:
             pdf.setFont("Helvetica-Bold", 16)
             pdf.drawCentredString(300, 780, "Maitexa Technologies Pvt Ltd")
             pdf.setFont("Helvetica", 12)
-            pdf.drawCentredString(300, 740, "No new job updates found at this moment.")
-            pdf.drawCentredString(300, 720, "Please check back later for fresh openings.")
+            pdf.drawCentredString(300, 740, "No new jobs found currently.")
+            pdf.drawCentredString(300, 720, "Please check again soon.")
             pdf.save()
             EOF
-          else
-            echo "✅ PDF generated successfully."
           fi
 
-      - name: Upload PDF to transfer.sh
-        id: upload
-        run: |
-          echo "🌍 Uploading PDF to transfer.sh..."
-          if [ ! -f "Maitexa_Green_Adjusted_Brochure.pdf" ]; then
-            echo "❌ PDF file missing after fallback. Aborting."
-            exit 1
-          fi
-
-          url=$(curl -s --upload-file Maitexa_Green_Adjusted_Brochure.pdf https://transfer.sh/Maitexa_Green_Adjusted_Brochure.pdf || true)
-          if echo "$url" | grep -q "https://"; then
-            echo "✅ Uploaded successfully: $url"
-            echo "pdf_url=$url" >> $GITHUB_ENV
-          else
-            echo "❌ Upload failed. Using fallback link..."
-            echo "pdf_url=https://example.com" >> $GITHUB_ENV
-          fi
-
-      - name: Send professional email with inline PDF view
+      - name: Send email with attachment (Drive-style view)
         env:
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
-          PDF_URL: ${{ env.pdf_url }}
         run: |
           python - <<'EOF'
           import os, smtplib
           from email.mime.text import MIMEText
           from email.mime.multipart import MIMEMultipart
+          from email.mime.base import MIMEBase
+          from email import encoders
           from datetime import datetime
 
           sender = os.getenv("EMAIL_USER")
           password = os.getenv("EMAIL_PASS")
           recipients = [x.strip() for x in os.getenv("EMAIL_TO", "").split(",") if x.strip()]
-          pdf_url = os.getenv("PDF_URL")
+          pdf_file = "Maitexa_Green_Adjusted_Brochure.pdf"
 
-          msg = MIMEMultipart("alternative")
+          msg = MIMEMultipart()
           msg["From"] = f"Maitexa Technologies <{sender}>"
           msg["To"] = ", ".join(recipients)
-          msg["Subject"] = f"🌟 Exciting Career Opportunities – {datetime.now().strftime('%d %b %Y')}"
+          msg["Subject"] = f"🌟 Maitexa Kerala IT Jobs – {datetime.now().strftime('%d %b %Y')}"
 
-          html_content = f"""
+          # 💌 HTML body
+          html = f"""
           <html>
           <body style="font-family: Arial, sans-serif; font-size:15px; color:#222; line-height:1.6;">
-              <p>Dear Team,</p>
+            <p>Dear Team,</p>
+            <p>We are thrilled to inform you that <strong>new and exciting career opportunities</strong> are now open for talented individuals like you.</p>
+            <p>At <strong>Maitexa Technologies</strong>, we believe that dreams are the starting point of every great success story.
+            This is your chance to chase your dreams and build a rewarding career with us.</p>
+            <p>✨ Explore the latest openings and find the role that best fits your passion and skills.</p>
 
-              <p>We are thrilled to inform you that <strong>new and exciting career opportunities</strong> 
-              are now open for talented individuals like you.</p>
+            <div style="text-align:center; margin-top:20px;">
+              <a href="#" style="background-color:#007A33; color:#fff; padding:12px 25px;
+                 text-decoration:none; border-radius:6px; font-weight:bold;">
+                 ⬇️ Download Brochure (PDF)
+              </a>
+            </div>
 
-              <p>At <strong>Maitexa Technologies</strong>, we believe that dreams are the starting point of every great success story. 
-              This is your chance to chase your dreams and build a rewarding career with us.</p>
+            <p style="margin-top:20px;">Take a moment to look through the opportunities and apply for the position that aligns with your goals.<br>
+            Your next big move could start today!</p>
 
-              <p>✨ <strong>Explore the latest openings</strong> and find the role that best fits your passion and skills.</p>
+            <p>We wish you all the best in your career journey. Let’s build a brighter future together!</p>
 
-              <div style="text-align: center; margin-top: 20px;">
-                  <a href="{pdf_url}" target="_blank"
-                     style="display:inline-block; width:250px; background-color:#007A33; color:#fff; 
-                     padding:12px 20px; text-decoration:none; border-radius:6px; font-weight:bold; margin:5px;">
-                     👀 View Current Openings
-                  </a><br>
-                  <a href="{pdf_url}" download
-                     style="display:inline-block; width:250px; background-color:#007A33; color:#fff; 
-                     padding:12px 20px; text-decoration:none; border-radius:6px; font-weight:bold; margin:5px;">
-                     ⬇️ Download Brochure (PDF)
-                  </a>
-              </div>
+            <p style="margin-top:20px;">Warm regards,<br>
+            <strong style="color:#007A33;">Maitexa Technologies Pvt Ltd</strong><br>
+            Kadannamanna, Malappuram, Kerala – 679324<br>
+            <a href='mailto:contact@maitexa.com'>contact@maitexa.com</a> |
+            <a href='https://www.maitexa.com'>www.maitexa.com</a></p>
 
-              <p style="margin-top: 20px;">
-              Take a moment to look through the opportunities and apply for the position that aligns with your goals.<br>
-              Your next big move could start today!
-              </p>
-
-              <p>We wish you all the best in your career journey. Let’s build a brighter future together!</p>
-
-              <p style="margin-top:20px;">Warm regards,<br>
-              <strong style="color:#007A33;">Maitexa Technologies Pvt Ltd</strong><br>
-              Kadannamanna, Malappuram, Kerala – 679324<br>
-              <a href='mailto:contact@maitexa.com'>contact@maitexa.com</a> |
-              <a href='https://www.maitexa.com'>www.maitexa.com</a>
-              </p>
-
-              <p style="font-size:12px; color:#666;">— Generated automatically by Maitexa Job Tracker © 2025</p>
+            <p style="font-size:12px; color:#666;">— Generated automatically by Maitexa Job Tracker © 2025</p>
           </body>
           </html>
           """
+          msg.attach(MIMEText(html, "html"))
 
-          msg.attach(MIMEText(html_content, "html"))
+          # 📎 Attach the PDF file (Drive-style attachment view)
+          if os.path.exists(pdf_file):
+              with open(pdf_file, "rb") as f:
+                  part = MIMEBase("application", "pdf")
+                  part.set_payload(f.read())
+              encoders.encode_base64(part)
+              part.add_header("Content-Disposition", f'attachment; filename="{pdf_file}"')
+              msg.attach(part)
+          else:
+              msg.attach(MIMEText("⚠️ PDF not found – scraper may have failed.", "plain"))
 
-          try:
-              with smtplib.SMTP("smtp.gmail.com", 587) as server:
-                  server.starttls()
-                  server.login(sender, password)
-                  server.send_message(msg)
-              print(f"✅ Email sent successfully with PDF link: {pdf_url}")
-          except Exception as e:
-              print(f"❌ Email send failed: {e}")
+          with smtplib.SMTP("smtp.gmail.com", 587) as server:
+              server.starttls()
+              server.login(sender, password)
+              server.send_message(msg)
+
+          print("✅ Email with Drive-style PDF attachment sent successfully.")
           EOF
