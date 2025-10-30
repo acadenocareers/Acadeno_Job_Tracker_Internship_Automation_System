@@ -9,8 +9,6 @@ on:
 jobs:
   run-script:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - name: Checkout repository
@@ -27,32 +25,22 @@ jobs:
           pip install selenium requests beautifulsoup4 reportlab webdriver-manager
 
       - name: Run Maitexa job scraper
-        run: |
-          echo "🚀 Running Maitexa scraper..."
-          python app.py || echo "⚠️ Scraper finished with warnings."
-          if [ ! -f "Maitexa_Green_Adjusted_Brochure.pdf" ]; then
-            echo "❌ PDF not found. Creating fallback..."
-            python - <<'EOF'
-            from reportlab.pdfgen import canvas
-            from reportlab.lib.pagesizes import A4
-            pdf = canvas.Canvas("Maitexa_Green_Adjusted_Brochure.pdf", pagesize=A4)
-            pdf.setFont("Helvetica-Bold", 16)
-            pdf.drawCentredString(300, 780, "Maitexa Technologies Pvt Ltd")
-            pdf.setFont("Helvetica", 12)
-            pdf.drawCentredString(300, 740, "No new jobs found currently.")
-            pdf.drawCentredString(300, 720, "Please check again soon.")
-            pdf.save()
-            EOF
-          fi
+        run: python app.py
 
-      - name: Send email with attachment (Drive-style view)
+      - name: Upload PDF Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: Maitexa_Job_Brochure
+          path: Maitexa_Green_Adjusted_Brochure.pdf
+
+      - name: Send professional email with brochure
         env:
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
         run: |
           python - <<'EOF'
-          import os, smtplib
+          import os, time, smtplib
           from email.mime.text import MIMEText
           from email.mime.multipart import MIMEMultipart
           from email.mime.base import MIMEBase
@@ -62,62 +50,77 @@ jobs:
           sender = os.getenv("EMAIL_USER")
           password = os.getenv("EMAIL_PASS")
           recipients = [x.strip() for x in os.getenv("EMAIL_TO", "").split(",") if x.strip()]
-          pdf_file = "Maitexa_Green_Adjusted_Brochure.pdf"
 
-          msg = MIMEMultipart()
+          pdf_file = "Maitexa_Green_Adjusted_Brochure.pdf"
+          for _ in range(10):
+              if os.path.exists(pdf_file):
+                  break
+              time.sleep(2)
+
+          msg = MIMEMultipart("alternative")
           msg["From"] = f"Maitexa Technologies <{sender}>"
           msg["To"] = ", ".join(recipients)
-          msg["Subject"] = f"🌟 Maitexa Kerala IT Jobs – {datetime.now().strftime('%d %b %Y')}"
+          msg["Subject"] = f"🌟 Exciting Career Opportunities Await You – {datetime.now().strftime('%d %b %Y')}"
 
-          # 💌 HTML body
-          html = f"""
+          # ✉️ Updated HTML Email Body (Professional & Motivational)
+          html_content = """
           <html>
           <body style="font-family: Arial, sans-serif; font-size:15px; color:#222; line-height:1.6;">
-            <p>Dear Team,</p>
-            <p>We are thrilled to inform you that <strong>new and exciting career opportunities</strong> are now open for talented individuals like you.</p>
-            <p>At <strong>Maitexa Technologies</strong>, we believe that dreams are the starting point of every great success story.
-            This is your chance to chase your dreams and build a rewarding career with us.</p>
-            <p>✨ Explore the latest openings and find the role that best fits your passion and skills.</p>
+              <p>Dear Team,</p>
 
-            <div style="text-align:center; margin-top:20px;">
-              <a href="#" style="background-color:#007A33; color:#fff; padding:12px 25px;
-                 text-decoration:none; border-radius:6px; font-weight:bold;">
-                 ⬇️ Download Brochure (PDF)
-              </a>
-            </div>
+              <p>We are thrilled to inform you that <strong>new and exciting career opportunities</strong> are now open for talented individuals like you.</p>
 
-            <p style="margin-top:20px;">Take a moment to look through the opportunities and apply for the position that aligns with your goals.<br>
-            Your next big move could start today!</p>
+              <p>At <strong>Maitexa Technologies</strong>, we believe that dreams are the starting point of every great success story. 
+              This is your chance to chase your dreams and build a rewarding career with us.</p>
 
-            <p>We wish you all the best in your career journey. Let’s build a brighter future together!</p>
+              <p>
+              <strong>✨ Explore the latest openings</strong> and find the role that best fits your passion and skills.
+              </p>
 
-            <p style="margin-top:20px;">Warm regards,<br>
-            <strong style="color:#007A33;">Maitexa Technologies Pvt Ltd</strong><br>
-            Kadannamanna, Malappuram, Kerala – 679324<br>
-            <a href='mailto:contact@maitexa.com'>contact@maitexa.com</a> |
-            <a href='https://www.maitexa.com'>www.maitexa.com</a></p>
+              <p style="margin-top: 10px; text-align: center;">
+                  <a href="https://infopark.in/companies/job-search" 
+                     style="background-color:#007A33; color:#fff; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold;">
+                     👉 Click here to view current openings
+                  </a>
+              </p>
 
-            <p style="font-size:12px; color:#666;">— Generated automatically by Maitexa Job Tracker © 2025</p>
+              <p style="margin-top: 15px;">
+              Take a moment to look through the opportunities and apply for the position that aligns with your goals. 
+              <br>Your next big move could start today!
+              </p>
+
+              <p>We wish you all the best in your career journey. Let’s build a brighter future together!</p>
+
+              <p style="margin-top:20px;">Warm regards,<br>
+              <strong style="color:#007A33;">Maitexa Technologies Pvt Ltd</strong><br>
+              Kadannamanna, Malappuram, Kerala – 679324<br>
+              <a href='mailto:contact@maitexa.com'>contact@maitexa.com</a> |
+              <a href='https://www.maitexa.com'>www.maitexa.com</a>
+              </p>
+
+              <p style="font-size:12px; color:#666;">— Generated automatically by Maitexa Job Tracker © 2025</p>
           </body>
           </html>
           """
-          msg.attach(MIMEText(html, "html"))
 
-          # 📎 Attach the PDF file (Drive-style attachment view)
+          msg.attach(MIMEText(html_content, "html"))
+
+          # Attach PDF if available
           if os.path.exists(pdf_file):
               with open(pdf_file, "rb") as f:
                   part = MIMEBase("application", "pdf")
                   part.set_payload(f.read())
               encoders.encode_base64(part)
-              part.add_header("Content-Disposition", f'attachment; filename="{pdf_file}"')
+              part.add_header("Content-Disposition", f"attachment; filename={pdf_file}")
               msg.attach(part)
           else:
-              msg.attach(MIMEText("⚠️ PDF not found – scraper may have failed.", "plain"))
+              msg.attach(MIMEText("⚠️ PDF not found – the scraper may have failed.", "plain"))
 
+          # Send Email
           with smtplib.SMTP("smtp.gmail.com", 587) as server:
               server.starttls()
               server.login(sender, password)
               server.send_message(msg)
 
-          print("✅ Email with Drive-style PDF attachment sent successfully.")
+          print("✅ Professional motivational email sent successfully with attachment!")
           EOF
