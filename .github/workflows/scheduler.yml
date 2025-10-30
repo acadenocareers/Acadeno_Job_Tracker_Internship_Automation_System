@@ -29,22 +29,20 @@ jobs:
       - name: Run Maitexa job scraper
         run: python app.py
 
-      - name: Commit and push PDF for GitHub Pages hosting
+      - name: Upload PDF temporarily to transfer.sh
+        id: upload
         run: |
-          mkdir -p pdf_reports
-          mv Maitexa_Green_Adjusted_Brochure.pdf pdf_reports/
-          git config --global user.name "Maitexa Auto Bot"
-          git config --global user.email "noreply@maitexa.com"
-          git add pdf_reports/Maitexa_Green_Adjusted_Brochure.pdf
-          git commit -m "Auto update Maitexa job brochure PDF" || echo "No new changes"
-          git push
+          echo "Uploading Maitexa_Green_Adjusted_Brochure.pdf to transfer.sh..."
+          url=$(curl -s --upload-file Maitexa_Green_Adjusted_Brochure.pdf https://transfer.sh/Maitexa_Green_Adjusted_Brochure.pdf)
+          echo "pdf_url=$url" >> $GITHUB_ENV
+          echo "✅ Uploaded successfully: $url"
 
-      - name: Send professional email with proper view and download buttons
+      - name: Send professional email with proper view/download buttons
         env:
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
+          PDF_URL: ${{ env.pdf_url }}
         run: |
           python - <<'EOF'
           import os, smtplib
@@ -55,13 +53,7 @@ jobs:
           sender = os.getenv("EMAIL_USER")
           password = os.getenv("EMAIL_PASS")
           recipients = [x.strip() for x in os.getenv("EMAIL_TO", "").split(",") if x.strip()]
-          repo = os.getenv("GITHUB_REPOSITORY")
-
-          # 🌐 GitHub Pages base URL (update this with your actual Pages link)
-          pages_base = f"https://aswathyshibin.github.io/job_listing/pdf_reports"
-          pdf_filename = "Maitexa_Green_Adjusted_Brochure.pdf"
-          view_url = f"{pages_base}/{pdf_filename}"          # Opens in browser
-          download_url = f"{pages_base}/{pdf_filename}"      # Same link; browser handles download if user chooses
+          pdf_url = os.getenv("PDF_URL")
 
           msg = MIMEMultipart("alternative")
           msg["From"] = f"Maitexa Technologies <{sender}>"
@@ -82,13 +74,13 @@ jobs:
               <p>✨ <strong>Explore the latest openings</strong> and find the role that best fits your passion and skills.</p>
 
               <div style="text-align: center; margin-top: 20px;">
-                  <a href="{view_url}" target="_blank"
+                  <a href="{pdf_url}" target="_blank"
                      style="background-color:#007A33; color:#fff; padding:12px 25px; 
                      text-decoration:none; border-radius:6px; font-weight:bold; margin-right:10px;">
                      👀 View Current Openings
                   </a>
 
-                  <a href="{download_url}" target="_blank"
+                  <a href="{pdf_url}" download
                      style="background-color:#007A33; color:#fff; padding:12px 25px; 
                      text-decoration:none; border-radius:6px; font-weight:bold;">
                      ⬇️ Download Brochure (PDF)
@@ -121,5 +113,5 @@ jobs:
               server.login(sender, password)
               server.send_message(msg)
 
-          print(f"✅ Email sent with in-browser PDF view link: {view_url}")
+          print(f"✅ Email sent with in-browser PDF view link: {pdf_url}")
           EOF
