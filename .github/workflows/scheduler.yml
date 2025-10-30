@@ -33,7 +33,7 @@ jobs:
           name: Maitexa_Job_Brochure
           path: Maitexa_Green_Adjusted_Brochure.pdf
 
-      - name: Send professional email with brochure
+      - name: Send professional email with brochure (no button)
         env:
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
@@ -52,6 +52,8 @@ jobs:
           recipients = [x.strip() for x in os.getenv("EMAIL_TO", "").split(",") if x.strip()]
 
           pdf_file = "Maitexa_Green_Adjusted_Brochure.pdf"
+
+          # Wait for the file to appear
           for _ in range(10):
               if os.path.exists(pdf_file):
                   break
@@ -62,7 +64,7 @@ jobs:
           msg["To"] = ", ".join(recipients)
           msg["Subject"] = f"🌟 Exciting Career Opportunities Await You – {datetime.now().strftime('%d %b %Y')}"
 
-          # ✉️ Updated HTML Email Body (Professional & Motivational)
+          # ✉️ Simplified Professional HTML Email (No button)
           html_content = """
           <html>
           <body style="font-family: Arial, sans-serif; font-size:15px; color:#222; line-height:1.6;">
@@ -73,21 +75,10 @@ jobs:
               <p>At <strong>Maitexa Technologies</strong>, we believe that dreams are the starting point of every great success story. 
               This is your chance to chase your dreams and build a rewarding career with us.</p>
 
-              <p>
-              <strong>✨ Explore the latest openings</strong> and find the role that best fits your passion and skills.
-              </p>
+              <p>✨ <strong>Explore the latest openings</strong> and find the role that best fits your passion and skills.</p>
 
-              <p style="margin-top: 10px; text-align: center;">
-                  <a href="https://infopark.in/companies/job-search" 
-                     style="background-color:#007A33; color:#fff; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold;">
-                     👉 Click here to view current openings
-                  </a>
-              </p>
-
-              <p style="margin-top: 15px;">
-              Take a moment to look through the opportunities and apply for the position that aligns with your goals. 
-              <br>Your next big move could start today!
-              </p>
+              <p>Take a moment to look through the opportunities and apply for the position that aligns with your goals. 
+              <br>Your next big move could start today!</p>
 
               <p>We wish you all the best in your career journey. Let’s build a brighter future together!</p>
 
@@ -105,13 +96,13 @@ jobs:
 
           msg.attach(MIMEText(html_content, "html"))
 
-          # Attach PDF if available
+          # 📎 Attach PDF (Drive-style view)
           if os.path.exists(pdf_file):
               with open(pdf_file, "rb") as f:
                   part = MIMEBase("application", "pdf")
                   part.set_payload(f.read())
               encoders.encode_base64(part)
-              part.add_header("Content-Disposition", f"attachment; filename={pdf_file}")
+              part.add_header("Content-Disposition", f'attachment; filename="{pdf_file}"')
               msg.attach(part)
           else:
               msg.attach(MIMEText("⚠️ PDF not found – the scraper may have failed.", "plain"))
@@ -122,5 +113,5 @@ jobs:
               server.login(sender, password)
               server.send_message(msg)
 
-          print("✅ Professional motivational email sent successfully with attachment!")
+          print("✅ Professional motivational email sent successfully with Drive-style attachment!")
           EOF
