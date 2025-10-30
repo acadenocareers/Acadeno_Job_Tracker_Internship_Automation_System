@@ -29,7 +29,7 @@ jobs:
       - name: Run Maitexa job scraper
         run: python app.py
 
-      # 🟢 Upload PDF to repository (so it has a public link)
+      # 🟢 Commit the new PDF to repo so it can be accessed via GitHub Pages or blob viewer
       - name: Commit and push PDF to repo
         run: |
           mkdir -p pdf_reports
@@ -37,10 +37,10 @@ jobs:
           git config --global user.name "Maitexa Auto Bot"
           git config --global user.email "noreply@maitexa.com"
           git add pdf_reports/Maitexa_Green_Adjusted_Brochure.pdf
-          git commit -m "Auto update Maitexa job brochure PDF"
+          git commit -m "Auto update Maitexa job brochure PDF" || echo "No changes to commit"
           git push
 
-      - name: Send professional email with PDF link
+      - name: Send professional email with PDF viewer and download options
         env:
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
@@ -48,7 +48,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           python - <<'EOF'
-          import os, time, smtplib
+          import os, smtplib, time
           from email.mime.text import MIMEText
           from email.mime.multipart import MIMEMultipart
           from datetime import datetime
@@ -58,15 +58,16 @@ jobs:
           recipients = [x.strip() for x in os.getenv("EMAIL_TO", "").split(",") if x.strip()]
           repo = os.getenv("GITHUB_REPOSITORY")
 
-          # Generate public GitHub URL to open PDF
-          pdf_url = f"https://github.com/{repo}/raw/main/pdf_reports/Maitexa_Green_Adjusted_Brochure.pdf"
+          # ✅ Blob URL (opens in GitHub viewer)
+          view_url = f"https://github.com/{repo}/blob/main/pdf_reports/Maitexa_Green_Adjusted_Brochure.pdf"
+          # ✅ Raw URL (downloads directly)
+          download_url = f"https://github.com/{repo}/raw/main/pdf_reports/Maitexa_Green_Adjusted_Brochure.pdf"
 
           msg = MIMEMultipart("alternative")
           msg["From"] = f"Maitexa Technologies <{sender}>"
           msg["To"] = ", ".join(recipients)
           msg["Subject"] = f"🌟 Exciting Career Opportunities Await You – {datetime.now().strftime('%d %b %Y')}"
 
-          # Updated HTML email (opens PDF directly)
           html_content = f"""
           <html>
           <body style="font-family: Arial, sans-serif; font-size:15px; color:#222; line-height:1.6;">
@@ -81,15 +82,25 @@ jobs:
               <p>✨ <strong>Explore the latest openings</strong> and find the role that best fits your passion and skills.</p>
 
               <p style="margin-top: 10px; text-align: center;">
-                  <a href="{pdf_url}" target="_blank"
+                  <a href="{view_url}" target="_blank"
                      style="background-color:#007A33; color:#fff; padding:10px 20px; text-decoration:none; 
                      border-radius:5px; font-weight:bold;">
                      👉 Click here to view current openings
                   </a>
               </p>
 
-              <p>Take a moment to look through the opportunities and apply for the position that aligns with your goals.<br>
-              Your next big move could start today!</p>
+              <p style="text-align: center; margin-top: 10px;">
+                  <a href="{download_url}" target="_blank"
+                     style="background-color:#444; color:#fff; padding:8px 18px; text-decoration:none; 
+                     border-radius:5px; font-weight:bold;">
+                     ⬇️ Download Brochure (PDF)
+                  </a>
+              </p>
+
+              <p style="margin-top: 15px;">
+              Take a moment to look through the opportunities and apply for the position that aligns with your goals.<br>
+              Your next big move could start today!
+              </p>
 
               <p>We wish you all the best in your career journey. Let’s build a brighter future together!</p>
 
@@ -97,7 +108,8 @@ jobs:
               <strong style="color:#007A33;">Maitexa Technologies Pvt Ltd</strong><br>
               Kadannamanna, Malappuram, Kerala – 679324<br>
               <a href='mailto:contact@maitexa.com'>contact@maitexa.com</a> |
-              <a href='https://www.maitexa.com'>www.maitexa.com</a></p>
+              <a href='https://www.maitexa.com'>www.maitexa.com</a>
+              </p>
 
               <p style="font-size:12px; color:#666;">— Generated automatically by Maitexa Job Tracker © 2025</p>
           </body>
@@ -111,5 +123,5 @@ jobs:
               server.login(sender, password)
               server.send_message(msg)
 
-          print(f"✅ Email sent successfully with live PDF link: {pdf_url}")
+          print(f"✅ Email sent with viewable PDF link: {view_url}")
           EOF
