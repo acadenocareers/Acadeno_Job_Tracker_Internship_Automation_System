@@ -2,43 +2,45 @@ name: Kerala IT Park Job Scraper Automation
 
 on:
   schedule:
-    # Runs at 8:00 AM, 4:20 PM, and 9:00 PM IST (converted to UTC)
-    # 8:00 AM IST  -> 02:30 UTC
-    # 4:20 PM IST  -> 10:50 UTC
-    # 9:00 PM IST  -> 15:30 UTC
+    # ⏰ Runs at 8:00 AM, 4:20 PM, and 9:00 PM IST
     - cron: '30 2,15 * * *'   # 8:00 AM & 9:00 PM IST
     - cron: '50 10 * * *'     # 4:20 PM IST
-  workflow_dispatch:  # allows manual trigger
+  workflow_dispatch:  # manual trigger option
 
 jobs:
   run-script:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
+      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install selenium requests beautifulsoup4 python-docx webdriver-manager
+          pip install selenium requests beautifulsoup4 reportlab webdriver-manager
 
-      - name: Run scraper
+      # 4️⃣ Run your scraper (this generates a new PDF)
+      - name: Run Maitexa job scraper
         run: python app.py
 
-      - name: Upload Word Report
+      # 5️⃣ Upload the generated PDF as artifact (optional — for backup)
+      - name: Upload PDF Report
         uses: actions/upload-artifact@v4
         with:
-          name: Job_Report
-          path: |
-            *.docx
+          name: Maitexa_Job_Brochure
+          path: Maitexa_Green_Adjusted_Brochure.pdf
 
-      - name: Send report via email
+      # 6️⃣ Email the newly generated PDF
+      - name: Send email with latest brochure
         env:
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
@@ -58,28 +60,31 @@ jobs:
           msg = MIMEMultipart()
           msg['From'] = sender
           msg['To'] = ", ".join(recipients)
-          msg['Subject'] = "Kerala IT Parks – Daily Job Report"
-          msg.attach(MIMEText("Attached is the latest Kerala IT Parks job listing report.", 'plain'))
+          msg['Subject'] = "📄 Maitexa Kerala IT Jobs – Daily Brochure"
+          msg.attach(MIMEText(
+              "Dear Team,\n\nAttached is the latest Maitexa Kerala IT Parks job brochure with fresh openings.\n\n"
+              "Regards,\nMaitexa Technologies\n", 
+              'plain'
+          ))
 
           attached = False
-          for f in os.listdir('.'):
-              if f.endswith('.docx'):
-                  with open(f, 'rb') as fp:
-                      part = MIMEBase('application', 'octet-stream')
-                      part.set_payload(fp.read())
-                  encoders.encode_base64(part)
-                  part.add_header('Content-Disposition', f'attachment; filename="{f}"')
-                  msg.attach(part)
-                  attached = True
-                  break
+          pdf_file = "Maitexa_Green_Adjusted_Brochure.pdf"
+          if os.path.exists(pdf_file):
+              with open(pdf_file, 'rb') as f:
+                  part = MIMEBase('application', 'pdf')
+                  part.set_payload(f.read())
+              encoders.encode_base64(part)
+              part.add_header('Content-Disposition', f'attachment; filename="{pdf_file}"')
+              msg.attach(part)
+              attached = True
 
           if not attached:
-              msg.attach(MIMEText("No .docx file was found to attach.", 'plain'))
+              msg.attach(MIMEText("⚠️ PDF not found. The scraper may have failed to generate the file.", 'plain'))
 
           with smtplib.SMTP('smtp.gmail.com', 587) as server:
               server.starttls()
               server.login(sender, password)
               server.send_message(msg)
 
-          print("✅ Email sent successfully!")
+          print("✅ Email with latest Maitexa brochure sent successfully!")
           EOF
