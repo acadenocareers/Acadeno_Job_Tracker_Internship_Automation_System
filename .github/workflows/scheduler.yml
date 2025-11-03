@@ -22,96 +22,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install selenium requests beautifulsoup4 reportlab webdriver-manager
+          pip install selenium requests beautifulsoup4 webdriver-manager
 
-      - name: Run Maitexa job scraper
-        run: python app.py
-
-      - name: Upload PDF Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: Maitexa_Job_Brochure
-          path: Maitexa_Green_Adjusted_Brochure.pdf
-
-      - name: Send professional email with brochure (no button)
+      - name: Run Maitexa job scraper and send tracked mails
         env:
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
-        run: |
-          python - <<'EOF'
-          import os, time, smtplib
-          from email.mime.text import MIMEText
-          from email.mime.multipart import MIMEMultipart
-          from email.mime.base import MIMEBase
-          from email import encoders
-          from datetime import datetime
-
-          sender = os.getenv("EMAIL_USER")
-          password = os.getenv("EMAIL_PASS")
-          recipients = [x.strip() for x in os.getenv("EMAIL_TO", "").split(",") if x.strip()]
-
-          pdf_file = "Maitexa_Green_Adjusted_Brochure.pdf"
-
-          # Wait for the file to appear
-          for _ in range(10):
-              if os.path.exists(pdf_file):
-                  break
-              time.sleep(2)
-
-          msg = MIMEMultipart("alternative")
-          msg["From"] = f"Maitexa Technologies <{sender}>"
-          msg["To"] = ", ".join(recipients)
-          msg["Subject"] = f"🌟 Exciting Career Opportunities Await You – {datetime.now().strftime('%d %b %Y')}"
-
-          # ✉️ Simplified Professional HTML Email (No button)
-          html_content = """
-          <html>
-          <body style="font-family: Arial, sans-serif; font-size:15px; color:#222; line-height:1.6;">
-              <p>Dear Team,</p>
-
-              <p>We are thrilled to inform you that <strong>new and exciting career opportunities</strong> are now open for talented individuals like you.</p>
-
-              <p>At <strong>Maitexa Technologies</strong>, we believe that dreams are the starting point of every great success story. 
-              This is your chance to chase your dreams and build a rewarding career with us.</p>
-
-              <p>✨ <strong>Explore the latest openings</strong> and find the role that best fits your passion and skills.</p>
-
-              <p>Take a moment to look through the opportunities and apply for the position that aligns with your goals. 
-              <br>Your next big move could start today!</p>
-
-              <p>We wish you all the best in your career journey. Let’s build a brighter future together!</p>
-
-              <p style="margin-top:20px;">Warm regards,<br>
-              <strong style="color:#007A33;">Maitexa Technologies Pvt Ltd</strong><br>
-              Kadannamanna, Malappuram, Kerala – 679324<br>
-              <a href='mailto:contact@maitexa.com'>contact@maitexa.com</a> |
-              <a href='https://www.maitexa.com'>www.maitexa.com</a>
-              </p>
-
-              <p style="font-size:12px; color:#666;">— Generated automatically by Maitexa Job Tracker © 2025</p>
-          </body>
-          </html>
-          """
-
-          msg.attach(MIMEText(html_content, "html"))
-
-          # 📎 Attach PDF (Drive-style view)
-          if os.path.exists(pdf_file):
-              with open(pdf_file, "rb") as f:
-                  part = MIMEBase("application", "pdf")
-                  part.set_payload(f.read())
-              encoders.encode_base64(part)
-              part.add_header("Content-Disposition", f'attachment; filename="{pdf_file}"')
-              msg.attach(part)
-          else:
-              msg.attach(MIMEText("⚠️ PDF not found – the scraper may have failed.", "plain"))
-
-          # Send Email
-          with smtplib.SMTP("smtp.gmail.com", 587) as server:
-              server.starttls()
-              server.login(sender, password)
-              server.send_message(msg)
-
-          print("✅ Professional motivational email sent successfully with Drive-style attachment!")
-          EOF
+          TRACKER_URL: ${{ secrets.TRACKER_URL }}
+        run: python app.py
