@@ -66,7 +66,7 @@ def send_email(jobs):
         <body style="font-family:Arial;background:#f4f8f5;padding:20px;">
         <div style="background:#007A33;padding:15px;border-radius:12px;color:white;text-align:center;">
             <h2>Maitexa Technologies Pvt Ltd</h2>
-            <p>Integrating Minds | Kadannamanna, Kerala</p>
+            <p>Integrating Minds | 4437, First Floor, AVS Tower, Opp. Jayalakshmi Silks, Kallai Road, Calicut,673002, Kerala</p>
         </div><br>
         <p>Dear <b>{email}</b>,</p>
         <p>Here are the latest <b>Kerala IT Park openings</b> for you:</p>
