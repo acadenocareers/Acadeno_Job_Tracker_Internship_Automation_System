@@ -2,6 +2,7 @@ import os
 import smtplib
 import time
 import requests
+import urllib.parse
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -10,14 +11,15 @@ from webdriver_manager.chrome import ChromeDriverManager
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
-import urllib.parse  # ✅ important for encoding URLs safely
 
-# ---- CONFIG ----
+# ---- CHROME SETUP ----
 chrome_options = Options()
 chrome_options.add_argument("headless")
+chrome_options.add_argument("no-sandbox")
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 time.sleep(1)
 
+# ---- FILTERS ----
 TECHNICAL_ROLES = [
     "data scientist", "data science", "data analyst", "machine learning", "ml", "ai",
     "python", "django", "flask", "full stack", "react", "angular", "vue", "javascript",
@@ -25,7 +27,7 @@ TECHNICAL_ROLES = [
 ]
 EXCLUDE_ROLES = ["php", "laravel", "wordpress", "drupal", ".net", "c#", "java", "spring", "hibernate"]
 
-# ---- SCRAPE ----
+# ---- SCRAPE INFOPARK ----
 def fetch_infopark_jobs():
     jobs = []
     for page in range(1, 3):
@@ -54,29 +56,34 @@ def send_email(jobs):
     sender = os.getenv("EMAIL_USER")
     password = os.getenv("EMAIL_PASS")
     recipients = [x.strip() for x in os.getenv("EMAIL_TO", "").split(",") if x.strip()]
-    tracker_url = os.getenv("TRACKER_URL")
+    tracker_url = os.getenv("TRACKER_URL")  # your Google Apps Script exec link
+
     subject = f"🌟 Latest Kerala IT Park Jobs – {datetime.now().strftime('%d %b %Y')}"
 
     for student_email in recipients:
         html = """
-        <html><body style="font-family:Arial;background:#f7f9f7;padding:20px;">
+        <html>
+        <body style="font-family:Arial;background:#f4f8f5;padding:20px;">
         <div style="background:#007A33;padding:15px;border-radius:12px;color:white;text-align:center;">
             <h2>Maitexa Technologies Pvt Ltd</h2>
             <p>Integrating Minds | Kadannamanna, Kerala</p>
         </div><br>
         <p>Dear <b>{email}</b>,</p>
-        <p>Here are the latest <b>IT park jobs</b> for you:</p>
+        <p>Here are the latest <b>Kerala IT Park openings</b> for you:</p>
         """.format(email=student_email)
 
         for job in jobs:
             safe_link = urllib.parse.quote(job['link'], safe='')
             safe_title = urllib.parse.quote(job['title'], safe='')
-            tracking_link = f"{tracker_url}?email={urllib.parse.quote(student_email)}&job={safe_title}&link={safe_link}"
+            safe_email = urllib.parse.quote(student_email, safe='')
+
+            tracking_link = f"{tracker_url}?email={safe_email}&job={safe_title}&link={safe_link}"
+
             html += f"""
-            <div style="border:1px solid #ccc;border-radius:10px;padding:10px;margin:10px;background:white;">
-                <h3 style="color:#007A33;">{job['title']}</h3>
+            <div style="border:1px solid #ccc;border-radius:10px;padding:12px;margin-bottom:12px;background:white;">
+                <h3 style="color:#007A33;margin:0;">{job['title']}</h3>
                 <p>🏢 {job['company']}</p>
-                <a href="{tracking_link}" style="background:#007A33;color:white;padding:8px 15px;text-decoration:none;border-radius:6px;">View & Apply</a>
+                <a href="{tracking_link}" style="display:inline-block;background:#007A33;color:white;padding:8px 14px;text-decoration:none;border-radius:6px;">View & Apply</a>
             </div>
             """
 
@@ -93,7 +100,7 @@ def send_email(jobs):
             server.login(sender, password)
             server.send_message(msg)
 
-        print(f"✅ Sent to {student_email}")
+        print(f"✅ Email sent to: {student_email}")
 
 # ---- MAIN ----
 if __name__ == "__main__":
