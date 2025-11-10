@@ -9,7 +9,7 @@ from reportlab.lib import colors
 import os
 
 
-# ------------------------------
+# ------------------------------____
 # CONFIGURATION
 # ------------------------------
 OUTPUT_FILE = "Maitexa_Final_Brochure.pdf"
