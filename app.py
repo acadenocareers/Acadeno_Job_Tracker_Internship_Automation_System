@@ -50,39 +50,44 @@ def fetch_infopark_jobs():
                 jobs.append({"title": title, "company": company, "link": job_link})
     return jobs
 
+
 # ---- EMAIL ----
 def send_email(jobs):
     sender = os.getenv("EMAIL_USER")
     password = os.getenv("EMAIL_PASS")
     recipients = [x.strip() for x in os.getenv("EMAIL_TO", "").split(",") if x.strip()]
-    student_names = [x.strip() for x in os.getenv("STUDENT_NAMES", "").split(",") if x.strip()]
+
+    # ✅ FIXED: Clean GitHub newline issue in secret
+    student_names = [x.strip() for x in os.getenv("STUDENT_NAMES", "").replace("\n", "").split(",") if x.strip()]
+
     tracker_url = os.getenv("TRACKER_URL")
 
     # ✅ Subject line
     subject = f"🚀 Acadeno Technologies | Latest Kerala IT Park Jobs – {datetime.now().strftime('%d %b %Y')}"
     logo_url = "https://drive.google.com/uc?export=view&id=1wLdjI3WqmmeZcCbsX8aADhP53mRXthtB"
 
-    # 🔍 DEBUG: Print loaded secrets and counts
+    # 🔍 DEBUG: Show secret values in log (no passwords)
     print("🔍 Loaded Secrets:")
     print(f"EMAIL_TO → {recipients}")
     print(f"STUDENT_NAMES → {student_names}")
     print(f"Counts → EMAILS={len(recipients)}, NAMES={len(student_names)}")
     print("-" * 60)
 
-    # ✅ Validate list counts
+    # ✅ Validate counts
     if len(student_names) != len(recipients):
         print(f"⚠️ Warning: STUDENT_NAMES count ({len(student_names)}) does not match EMAIL_TO count ({len(recipients)}).")
         print("Continuing with available names (matching by index)...\n")
-    
+
     for index, student_email in enumerate(recipients):
-        # ✅ Safely handle case when name list is shorter
+        # ✅ Safely get student name or fallback to “Student”
         student_name = student_names[index] if index < len(student_names) else "Student"
 
+        # ---- Email HTML ----
         html = f"""
         <html>
         <body style="font-family:Arial, sans-serif; background:#f4f8f5; padding:25px; line-height:1.6;">
 
-        <!-- HEADER SECTION -->
+        <!-- HEADER -->
         <div style="background:linear-gradient(90deg, #5B00C2, #FF6B00); padding:25px; border-radius:15px; color:white; text-align:center;">
             <img src="{logo_url}" alt="Acadeno Logo" style="width:120px; height:auto; margin-bottom:12px; border-radius:10px;">
             <h2 style="margin:0; font-size:22px;">Acadeno Technologies Private Limited</h2>
@@ -153,6 +158,7 @@ def send_email(jobs):
             server.send_message(msg)
 
         print(f"✅ Email sent to {student_name} ({student_email})")
+
 
 # ---- MAIN ----
 if __name__ == "__main__":
