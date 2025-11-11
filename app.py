@@ -65,11 +65,27 @@ def send_email(jobs):
         <html>
         <body style="font-family:Arial;background:#f4f8f5;padding:20px;">
         <div style="background:#007A33;padding:15px;border-radius:12px;color:white;text-align:center;">
-            <h2>Maitexa Technologies Pvt Ltd</h2>
-            <p>Integrating Minds | 4437, First Floor, AVS Tower, Opp. Jayalakshmi Silks, Kallai Road, Calicut,673002, Kerala</p>
+            <h2>Acadeno Technologies Private Limited</h2>
+            <p>4437, First Floor, AVS Tower, Opp. Jayalakshmi Silks, Kallai Road, Calicut,673002, Kerala</p>
         </div><br>
         <p>Dear <b>{email}</b>,</p>
-        <p>Here are the latest <b>Kerala IT Park openings</b> for you:</p>
+        <p>Every great career begins with a single step — a moment of courage, determination, and belief in yourself. 🌱
+At Acadeno Technologies, we believe that your journey matters as much as your destination. The opportunities before you are not just job openings — they are doors to your future, waiting for you to knock with confidence, curiosity, and commitment.
+
+💡 Remember:
+
+You don’t need to be perfect to begin — you just need to begin.</br>
+
+Every interview you attend, every resume you refine, and every challenge you face brings you one step closer to your goal.</br>
+
+Growth happens when you step out of your comfort zone and trust your own potential.</br>
+
+So take this chance, believe in your abilities, and give your best. The effort you put in today will become the story you’re proud to tell tomorrow. 🌟</br>
+
+Your future is not waiting to happen — it’s waiting for you to make it happen.</br>
+
+With best wishes,</br>
+<b>Team Acadeno Technologies Pvt. Ltd.<b></p>
         """.format(email=student_email)
 
         for job in jobs:
