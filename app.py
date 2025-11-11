@@ -61,7 +61,7 @@ def send_email(jobs):
     subject = f"🌟 Latest Kerala IT Park Jobs – {datetime.now().strftime('%d %b %Y')}"
 
     # ✅ Public logo URL (replace this with your hosted link)
-    logo_url = "https://drive.google.com/file/d/1wLdjI3WqmmeZcCbsX8aADhP53mRXthtB/view?usp=drive_link.png"  # Replace with your real uploaded logo URL
+    logo_url = "https://drive.google.com/uc?export=view&id=1wLdjI3WqmmeZcCbsX8aADhP53mRXthtB"  # Replace with your real uploaded logo URL
 
     for student_email in recipients:
         html = f"""
