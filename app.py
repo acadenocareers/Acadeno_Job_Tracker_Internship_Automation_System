@@ -510,8 +510,25 @@ def send_email(jobs):
         <!-- BODY -->
         <div style="background:white; padding:25px; border-radius:12px; margin-top:25px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
             <p>Dear <b style="color:#5B00C2;">{student_name}</b>,</p>
+<div style="background:white; padding:25px; border-radius:12px; margin-top:25px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+            <p>Dear <b style="color:#5B00C2;">{student_name}</b>,</p>
 
-            <p>Here are the latest <b>Python / Data / AI / ML / Analytics</b> jobs across India (fresher/entry-friendly):</p>
+            <p>Every great career begins with a single step — a moment of courage, determination, and belief in yourself. 🌱</p>
+
+            <p>At Acadeno Technologies, we believe that your journey matters as much as your destination. The opportunities before you are not just job openings — they are doors to your future, waiting for you to knock with confidence, curiosity, and commitment. 💡</p>
+
+            <p><b>Remember:</b> You don’t need to be perfect to begin — you just need to begin.</p>
+
+            <p>Every interview you attend, every resume you refine, and every challenge you face brings you one step closer to your goal. Growth happens when you step out of your comfort zone and trust your own potential.</p>
+
+            <p>So take this chance, believe in your abilities, and give your best. The effort you put in today will become the story you’re proud to tell tomorrow. 🌟</p>
+
+            <p>Your future is not waiting to happen — it’s waiting for you to make it happen.</p>
+
+            <p>With best wishes,</p>
+            <p><b>Team Acadeno Technologies Pvt. Ltd.</b></p>
+        </div>
+
         </div>
 
         <!-- JOB LIST -->
