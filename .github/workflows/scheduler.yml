@@ -2,7 +2,7 @@ name: Kerala IT Park Job Scraper Automation
 
 on:
   schedule:
-    - cron: '0 4 * * *'   # Runs every day at 10:00 AM IST (4:30 AM UTC)
+    - cron: '0 4 * * *'
   workflow_dispatch:
 
 jobs:
@@ -21,13 +21,14 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas selenium requests beautifulsoup4 webdriver-manager
+          pip install pandas selenium requests beautifulsoup4 webdriver-manager google-generativeai
 
-      - name: Run Maitexa job scraper and send tracked mails
+      - name: Run Maitexa Job Scraper and Send Emails
         env:
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
           TRACKER_URL: ${{ secrets.TRACKER_URL }}
-          STUDENT_NAMES: ${{ secrets.STUDENT_NAMES }}  # ✅ Taken from GitHub Secrets (not hardcoded)
+          STUDENT_NAMES: ${{ secrets.STUDENT_NAMES }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: python app.py
