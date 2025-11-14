@@ -488,7 +488,7 @@ def send_email(jobs):
     ]
     tracker_url = os.getenv("TRACKER_URL")
 
-    subject = f"Acadeno Technologies | Latest Python & Data Jobs – {datetime.now().strftime('%d %b %Y')}"
+    subject = f"Acadeno Technologies | Latest Jobs Updates – {datetime.now().strftime('%d %b %Y')}"
     logo_url = "https://drive.google.com/uc?export=view&id=1wLdjI3WqmmeZcCbsX8aADhP53mRXthtB"
 
     if len(student_names) != len(recipients):
@@ -507,10 +507,8 @@ def send_email(jobs):
             <h2 style="margin:0; font-size:22px;">Acadeno Technologies Private Limited</h2>
         </div>
 
-        <!-- BODY -->
+         <!-- BODY -->
         <div style="background:white; padding:25px; border-radius:12px; margin-top:25px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
-            <p>Dear <b style="color:#5B00C2;">{student_name}</b>,</p>
-<div style="background:white; padding:25px; border-radius:12px; margin-top:25px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
             <p>Dear <b style="color:#5B00C2;">{student_name}</b>,</p>
 
             <p>Every great career begins with a single step — a moment of courage, determination, and belief in yourself. 🌱</p>
@@ -528,9 +526,6 @@ def send_email(jobs):
             <p>With best wishes,</p>
             <p><b>Team Acadeno Technologies Pvt. Ltd.</b></p>
         </div>
-
-        </div>
-
         <!-- JOB LIST -->
         <div style="margin-top:20px;">
         """
