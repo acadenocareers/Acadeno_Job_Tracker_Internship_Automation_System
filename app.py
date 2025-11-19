@@ -55,7 +55,11 @@ INCLUDE_TERMS = [
     "machine learning","ml","ai","artificial intelligence","deep learning",
     "data science","data scientist","data analyst","analytics","business intelligence",
     "power bi","tableau","excel","sql","dashboard","bi developer","data engineer",
-    "nlp","llm","pandas","numpy","scikit-learn","tensorflow","pytorch","rest api"
+    "nlp","llm","pandas","numpy","scikit-learn","tensorflow","pytorch","rest api","Data Analyst","Junior Data Analyst","Senior Data Analyst","Business Data Analyst",
+"Business Analyst","Reporting Analyst","Data Reporting Analyst","Operations Analyst","Product Analyst","Marketing Analyst","Financial Analyst","BI Analyst / Business Intelligence Analyst","Data Quality Analyst","Data Visualization Analyst",
+"Quantitative Analyst / Quant Analyst","Statistical Analyst","Data Science Analyst","Insights Analyst","Data Operations Analyst","Risk Analyst","Fraud Analyst","Workforce Analyst"
+"Revenue Analyst","Research Analyst","Analytics Specialist","Decision Support Analyst"
+
 ]
 
 # Regex to detect high experience mentions (to be excluded)
