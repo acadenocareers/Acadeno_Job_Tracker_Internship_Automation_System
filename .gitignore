@@ -1,0 +1,7 @@
+# Do not upload secrets or local DB
+.env
+users.db
+
+# Python cache
+__pycache__/
+*.pyc
