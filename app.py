@@ -643,6 +643,66 @@ def send_email(jobs):
 
         print(f"✅ Email sent to {student_name} ({student_email})")
 
+
+
+def filter_recent_jobs(jobs, history="previous_jobs.csv", days=30):
+    """
+    Keep only jobs that were NOT sent in the last `days` days.
+    Store history in a CSV file.
+    """
+    now = datetime.now()
+
+    # ---------- 1) Load old history if exists ----------
+    if os.path.exists(history):
+        df_old = pd.read_csv(history)
+
+        # Ensure required columns exist
+        if "date" in df_old.columns:
+            df_old["date"] = pd.to_datetime(df_old["date"], errors="coerce")
+        else:
+            df_old["date"] = now
+
+        # Keep only rows within last N days
+        df_old = df_old[df_old["date"] > now - pd.Timedelta(days=days)]
+    else:
+        # No history yet → create an empty DataFrame
+        df_old = pd.DataFrame(columns=["title", "company", "link", "date"])
+
+    # ---------- 2) New scraped jobs ----------
+    df_new = pd.DataFrame(jobs)
+
+    if df_new.empty:
+        return []
+
+    # ---------- 3) Remove jobs that already exist in recent history ----------
+    merged = df_new.merge(
+        df_old[["title", "company"]],
+        on=["title", "company"],
+        how="left",
+        indicator=True
+    )
+
+    # `_merge == left_only` → only in new, not in history
+    df_new_filtered = merged[merged["_merge"] == "left_only"][["title", "company", "link"]]
+
+    # If nothing new, return empty list
+    if df_new_filtered.empty:
+        return []
+
+    # ---------- 4) Add date + update history file ----------
+    df_new_filtered["date"] = now
+
+    df_updated = pd.concat([df_old, df_new_filtered], ignore_index=True)
+    df_updated.drop_duplicates(subset=["title", "company"], inplace=True)
+
+    # Save updated history — this file is auto-created if not present
+    df_updated.to_csv(history, index=False)
+
+    # ---------- 5) Return back to Python as list of dicts ----------
+    return df_new_filtered[["title", "company", "link"]].to_dict(orient="records")
+
+
+
 # -------------------------
 # MAIN
 # -------------------------
@@ -652,16 +712,16 @@ if __name__ == "__main__":
     finally:
         try:
             driver.quit()
-        except Exception:
+        except:
             pass
 
+    # 🔥 Only keep jobs NOT sent in the last 30 days
+    jobs = filter_recent_jobs(jobs, history="previous_jobs.csv", days=30)
+
     if jobs:
-        # Save CSV for record (GitHub Actions runner artifact if you upload it)
         df = pd.DataFrame(jobs)
-        df.drop_duplicates(subset=["title","company"], inplace=True)
         df.to_csv("jobs.csv", index=False)
-        print(f"✅ Found {len(df)} matching jobs. Saved to jobs.csv.")
-        # Send email (keeps your original mail settings)
+        print(f"✅ NEW jobs found: {len(df)}. Saved to jobs.csv.")
         send_email(jobs)
     else:
-        print("⚠️ No matching jobs found.")
+        print("⚠️ No NEW jobs found (already sent in last 30 days).")
