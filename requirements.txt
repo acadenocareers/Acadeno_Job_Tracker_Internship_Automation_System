@@ -1,0 +1,7 @@
+Flask
+Werkzeug
+numpy
+joblib
+python-dotenv
+gunicorn
+pillow

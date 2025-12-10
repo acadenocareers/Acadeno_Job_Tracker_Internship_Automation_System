@@ -228,7 +228,7 @@ def index_page():
         return redirect(url_for("login"))
 
     # index.html is in the PROJECT ROOT, not in /templates
-    return send_from_directory(".", "index.html")
+    return render_template("index.html")
 
 
 # ---------------- LOGOUT ----------------
