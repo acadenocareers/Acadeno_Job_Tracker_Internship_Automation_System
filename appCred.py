@@ -4,8 +4,39 @@ from nacl import public
 import base64
 import json
 import os
+import sqlite3
+
+
 
 app = Flask(__name__)
+
+
+def init_students_db():
+    conn = sqlite3.connect("users.db")
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS students (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            email TEXT UNIQUE
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+init_students_db()
+
+def save_student_to_db(name, email):
+    conn = sqlite3.connect("users.db")
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT OR IGNORE INTO students (name, email) VALUES (?, ?)",
+        (name, email)
+    )
+    conn.commit()
+    conn.close()
+
+
 
 # Load GitHub credentials
 GITHUB_TOKEN = os.getenv("GITHUB_PAT")   # <-- FIXED
@@ -58,11 +89,16 @@ def request_credentials():
     data = request.get_json(silent=True) or {}
     student_name = data.get("student_name", "").strip()
     student_mail = data.get("student_mail", "").strip().lower()
+   
+
 
     if not student_name or not student_mail:
         return jsonify({"error": "student_name and student_mail are required."}), 400
+    
+    
 
     try:
+        save_student_to_db(student_name, student_mail)
         upsert_secret(EMAIL_SECRET, student_mail)
         upsert_secret(NAMES_SECRET, student_name)
 
