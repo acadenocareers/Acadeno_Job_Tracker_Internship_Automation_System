@@ -5,3 +5,10 @@ joblib
 python-dotenv
 gunicorn
 pillow
+requests
+PyNaCl
+beautifulsoup4
+lxml
+pandas
+selenium
+webdriver-manager
