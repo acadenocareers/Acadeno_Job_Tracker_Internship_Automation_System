@@ -417,9 +417,13 @@ def send_job_poster_route():
     if not poster_file:
         return jsonify({"error": "No file uploaded"}), 400
 
-    os.makedirs("uploads", exist_ok=True)
-    save_path = os.path.join("uploads", poster_file.filename)
-    poster_file.save(save_path)
+    # Just read the file, do NOT save it
+    poster_bytes = poster_file.read()
+
+    print("Poster received successfully:", poster_file.filename)
+
+    return jsonify({"status": "success"}), 200
+
 
     # TEMPORARILY DISABLE EMAIL SENDING
     print("Poster saved successfully at:", save_path)
