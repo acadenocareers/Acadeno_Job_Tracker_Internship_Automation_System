@@ -425,11 +425,7 @@ def send_job_poster_route():
     return jsonify({"status": "success"}), 200
 
 
-    # TEMPORARILY DISABLE EMAIL SENDING
-    print("Poster saved successfully at:", save_path)
-
-    return jsonify({"status": "success"})
-
+    
 
 
 
