@@ -413,8 +413,6 @@ def upload_poster_page():
 # ------------------ SEND POSTER TO STUDENTS ------------------
 @app.route("/send-job-poster", methods=["POST"])
 def send_job_poster_route():
-    from send_mail_script import send_job_poster
-
     poster_file = request.files.get("poster")
     if not poster_file:
         return jsonify({"error": "No file uploaded"}), 400
@@ -423,9 +421,11 @@ def send_job_poster_route():
     save_path = os.path.join("uploads", poster_file.filename)
     poster_file.save(save_path)
 
-    send_job_poster(save_path)
+    # TEMPORARILY DISABLE EMAIL SENDING
+    print("Poster saved successfully at:", save_path)
 
     return jsonify({"status": "success"})
+
 
 
 
