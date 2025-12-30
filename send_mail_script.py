@@ -50,7 +50,7 @@ Tone: supportive, inspiring, professional.
         text = result[0]["generated_text"]
         return text.split("[/INST]")[-1].strip()
     except:
-        return "Believe in yourself — every step you take today builds the future you deserve 🌱"
+        return "No matter how slow your progress feels, you are still moving forward — and that is something to be proud of..."
 
 # ---------------------------------------------------
 # MAIN MAIL FUNCTION
