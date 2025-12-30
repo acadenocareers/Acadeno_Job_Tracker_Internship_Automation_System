@@ -1,6 +1,7 @@
 import os
 import ssl
 import smtplib
+import requests
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -9,8 +10,9 @@ from email import encoders
 MAIL_USER = os.getenv("MAIL_USER")
 MAIL_PASS = os.getenv("MAIL_PASS")
 
-
+# ---------------------------------------------------
 # READ STUDENTS FROM names.txt & emails.txt
+# ---------------------------------------------------
 def read_students():
     students = []
 
@@ -26,8 +28,33 @@ def read_students():
 
     return students
 
+# ---------------------------------------------------
+# AI MOTIVATION GENERATOR (HuggingFace)
+# ---------------------------------------------------
+def get_ai_motivation():
+    try:
+        API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
+        headers = {"Authorization": f"Bearer {os.getenv('HF_API_KEY')}"}
 
+        prompt = """
+Write a short powerful motivational message for a student applying for IT jobs.
+Tone: supportive, inspiring, professional.
+1–2 sentences only.
+"""
 
+        payload = {"inputs": f"<s>[INST] {prompt} [/INST]"}
+
+        response = requests.post(API_URL, headers=headers, json=payload, timeout=60)
+        result = response.json()
+
+        text = result[0]["generated_text"]
+        return text.split("[/INST]")[-1].strip()
+    except:
+        return "Believe in yourself — every step you take today builds the future you deserve 🌱"
+
+# ---------------------------------------------------
+# MAIN MAIL FUNCTION
+# ---------------------------------------------------
 def send_job_poster(file_path):
     students = read_students()
 
@@ -35,9 +62,10 @@ def send_job_poster(file_path):
         print("❌ No students found. Check names.txt & emails.txt")
         return
 
-    # Load LOGO (as external link so no clipping)
-    LOGO_URL = "https://raw.githubusercontent.com/acadenocareers/Joblisting/main/maitexa_logo.png"
+    # Generate AI quote once per run
+    quote = get_ai_motivation()
 
+    LOGO_URL = "https://raw.githubusercontent.com/acadenocareers/Joblisting/main/maitexa_logo.png"
     context = ssl.create_default_context()
 
     for name, email in students:
@@ -48,11 +76,10 @@ def send_job_poster(file_path):
         msg["To"] = email
         msg["Subject"] = "Here is Your New Job Opportunity – Acadeno Technologies"
 
-        # ------------------- HTML CONTENT -------------------
         html_body = f"""
         <html>
         <body style="font-family: 'Segoe UI', sans-serif; background:#f7f7f7; padding:20px;">
-        
+
         <div style="max-width:700px; margin:auto; background:#ffffff; border-radius:12px; overflow:hidden;
              box-shadow:0 6px 20px rgba(0,0,0,0.15);">
 
@@ -65,9 +92,8 @@ def send_job_poster(file_path):
             <div style="padding:30px; font-size:16px; color:#333;">
                 <p>Dear <strong style="color:#6e3bea;">{name}</strong>,</p>
 
-                <p>
-                    Great opportunities begin with a single step — a moment of courage 
-                    and willingness to grow. 🌱  
+                <p style="font-weight:600; color:#333;">
+                   🌟 {quote}
                 </p>
 
                 <p>
@@ -104,7 +130,7 @@ def send_job_poster(file_path):
 
         msg.attach(MIMEText(html_body, "html"))
 
-        # ------------------- ATTACH POSTER -------------------
+        # ---------------- Attach Poster ----------------
         try:
             with open(file_path, "rb") as f:
                 attachment = MIMEBase("application", "octet-stream")
@@ -116,17 +142,15 @@ def send_job_poster(file_path):
                 f"attachment; filename={os.path.basename(file_path)}"
             )
             msg.attach(attachment)
-
         except Exception as e:
             print(f"❌ Error attaching file: {e}")
 
-        # ------------------- SEND EMAIL -------------------
+        # ---------------- Send Mail ----------------
         try:
             with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as smtp:
                 smtp.login(MAIL_USER, MAIL_PASS)
                 smtp.sendmail(MAIL_USER, email, msg.as_string())
 
             print(f"✔ Successfully sent to {email}")
-
         except Exception as e:
             print(f"❌ Error sending to {email}: {e}")
